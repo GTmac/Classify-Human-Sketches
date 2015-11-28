@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <png.h>
 #include <dlib/matrix.h>
+#include "image.h"
 #define IMAGE_SIZE  1111
 
 using namespace dlib;
@@ -61,8 +62,9 @@ void read_png_file(char *filename) {
 	fclose(fp);
 }
 
-matrix<double, IMAGE_SIZE, IMAGE_SIZE> process_png_file() {
-    matrix<double, IMAGE_SIZE, IMAGE_SIZE> image;
+image_type png_to_image(char *fname) {
+    read_png_file(fname);
+    image_type image;
     // printf("height and width: %d %d\n", height, width);
 	for(int y = 0; y < height; y++) {
 		png_bytep row = row_pointers[y];
@@ -79,17 +81,4 @@ matrix<double, IMAGE_SIZE, IMAGE_SIZE> process_png_file() {
     //        printf("%.3lf\n", image(y, x));
     //}
     return image;
-}
-
-int main(int argc, char *argv[])
-{
-	if(argc != 2)
-    {
-        printf("Usage: read_images [File Name]\n");
-        return 1;
-    }
-
-	read_png_file(argv[1]);
-	process_png_file();
-    return 0;
 }
