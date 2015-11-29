@@ -4,6 +4,7 @@
 #include <dlib/matrix.h>
 #include <fftw3.h>
 #include <vector>
+#include "debug.h"
 #include "image.h"
 
 using namespace std;
@@ -47,7 +48,7 @@ int get_mod(int x, int k)
 }
 // based on the gradients we get from Gaussin filters / Gabor filters,
 // calculate the reponse images
-void get_response_images(image_type l2_len, image_type orientation, vector<image_type> response_images)
+void get_response_images(image_type l2_len, image_type orientation, vector<image_type> &response_images)
 {
     double bin_width = M_PI / NUM_ORIENT_BINS;
 
@@ -66,7 +67,7 @@ void get_response_images(image_type l2_len, image_type orientation, vector<image
                     cur_orientation < bin_max - my_eps)
                 {
                     double dis_from_center = std::abs(bin_center - cur_orientation) / bin_width;
-                    response_images[bin_index](j, i) = (1.0 - dis_from_center) * l2_len(j, i);
+                    response_images[bin_index](j, i) += (1.0 - dis_from_center) * l2_len(j, i);
                     if (cur_orientation < bin_center)
                     {
                         response_images[get_mod(bin_index - 1, NUM_ORIENT_BINS)](j, i) += dis_from_center * l2_len(j, i);
@@ -118,10 +119,11 @@ vector<image_type> get_gaussian_gradient(image_type image)
                 orientation(i, j) -= M_PI;
         }
     get_response_images(l2_len, orientation, response_images);
-
     // apply tent to response images
     for (int i = 0;i < NUM_ORIENT_BINS;++i)
+    {
         apply_tent(response_images[i], image_hist[i]); 
+    }
     return image_hist;
 }
 
@@ -147,29 +149,50 @@ vector<local_desc_type> extract_desc(vector<image_type> image_hist)
                         // plus the offset
                         int real_x = desc_center_x + bin_center_x;
                         int real_y = desc_center_y + bin_center_y;
-                        printf("%d %d\n", real_x, real_y);
                         // index in the local feature vector
                         int local_index = o * NUM_SPATIAL_BINS * NUM_SPATIAL_BINS + sy * NUM_SPATIAL_BINS + sx;
                         // still in the image
                         if (real_x >= 0 && real_x < IMAGE_SIZE && real_y >= 0 && real_y < IMAGE_SIZE)
+                        {
                             local_desc(local_index) = image_hist[o](real_x, real_y);
+                        }
                     }
             feature_descs.push_back(normalize(local_desc));
         }
     return feature_descs;
 }
 
-void print_feature_descs(vector<local_desc_type> feature_descs)
+// quantize against the visual vocab
+void soft_quantize_feature(local_desc_type local_desc, vector<local_desc_type> vocab, local_desc_type &q)
 {
-    int n = feature_descs.size();
+    double sigma = 0.1;
+    int n = vocab.size();
     for (int i = 0;i < n;++i)
-        cout << feature_descs[i] << endl;
+    {
+        local_desc_type dis = local_desc - vocab[i];
+        q(i) = exp(-dot(dis, dis)) / (2 * sigma * sigma);
+        // normalize q
+        float sum = dlib::sum(q);
+        if (sum > my_eps)
+            q(i) /= sum;
+    }
+}
+
+void build_sketch_hist(vector<local_desc_type> feature_descs, vector<local_desc_type> vocab, local_desc_type &sketch_hist)
+{
+    int n_desc = feature_descs.size();
+    for (int i = 0;i < n_desc;++i)
+    {
+        local_desc_type q;
+        soft_quantize_feature(feature_descs[i], vocab, q);
+        sketch_hist += q;
+    }
+    sketch_hist /= n_desc;
 }
 
 vector<local_desc_type> extract_features_pipeline(image_type image)
 {
     vector<image_type> image_hist = get_gaussian_gradient(image);
     vector<local_desc_type> feature_descs = extract_desc(image_hist);
-    print_feature_descs(feature_descs);
     return feature_descs;
 }

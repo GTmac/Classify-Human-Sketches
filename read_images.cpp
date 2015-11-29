@@ -2,17 +2,24 @@
 #include <stdio.h>
 #include <png.h>
 #include <dlib/matrix.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <string.h>
+#include <iostream>
+#include <string>
+#include <vector>
 #include "image.h"
-#define IMAGE_SIZE  1111
 
-using namespace dlib;
+using namespace std;
 
+const int MAX_STRLEN = 1111;
 int width, height;
 png_byte color_type;
 png_byte bit_depth;
 png_bytep *row_pointers;
 
-void read_png_file(char *filename) {
+void read_png_file(const char *filename) {
 	FILE *fp = fopen(filename, "rb");
 
 	png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -62,7 +69,7 @@ void read_png_file(char *filename) {
 	fclose(fp);
 }
 
-image_type png_to_image(char *fname) {
+image_type png_to_image(const char *fname) {
     read_png_file(fname);
     image_type image;
     // printf("height and width: %d %d\n", height, width);
@@ -82,3 +89,50 @@ image_type png_to_image(char *fname) {
     //}
     return image;
 }
+
+// iterate through the whole png dir, no thumbnail allowed
+vector<string> read_png_dir(char *dir_name)
+{
+    DIR *dir = opendir(dir_name);
+    struct dirent* entry;
+    vector<string> png_list;
+
+    if (!dir)
+        return png_list;
+
+    while ( (entry = readdir(dir)))
+    {
+        // to the level of each category
+        if (entry -> d_type == DT_DIR)
+        {
+            char png_file_path[MAX_STRLEN], category_path[MAX_STRLEN] = "";
+            if (!strcmp(entry -> d_name, "..") || !strcmp(entry -> d_name, "."))
+                continue;
+            sprintf(category_path, "%s/%s", dir_name, entry -> d_name);
+            DIR *category_dir = opendir(category_path);
+            struct dirent* category_entry;
+            while ( (category_entry = readdir(category_dir)) )
+            {
+                // not thumbnail
+                if (category_entry -> d_type == DT_REG && category_entry -> d_name[0] != '.' && !strstr(category_entry -> d_name, "thumbnail"))
+                {
+                    sprintf(png_file_path, "%s/%s", category_path, category_entry -> d_name);
+                    png_list.push_back(string(png_file_path));
+                }
+            }
+        }
+    }
+    return png_list;
+}
+
+// int main(int argc, char *argv[])
+// {
+//     if (argc != 2)
+//     {
+//         printf("Usage: read_images [Png Dir Name]\n");
+//         return 1;
+//     }
+//     vector<string> s=read_png_dir(argv[1]);
+//     for (auto iter: s)
+//         cout << iter << endl;
+// }
