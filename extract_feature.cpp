@@ -6,6 +6,7 @@
 #include <vector>
 #include "debug.h"
 #include "image.h"
+#include "extract_feature.h"
 
 using namespace std;
 
@@ -162,29 +163,29 @@ vector<local_desc_type> extract_desc(vector<image_type> image_hist)
     return feature_descs;
 }
 
-// quantize against the visual vocab
-void soft_quantize_feature(local_desc_type local_desc, vector<local_desc_type> vocab, local_desc_type &q)
+void soft_quantize(local_desc_type desc, vector<local_desc_type> vocab, image_hist_type &q)
 {
     double sigma = 0.1;
-    int n = vocab.size();
-    for (int i = 0;i < n;++i)
+    int vocab_size = vocab.size();
+
+    for (int i = 0;i < vocab_size;++i)
     {
-        local_desc_type dis = local_desc - vocab[i];
+        local_desc_type dis = desc - vocab[i];
         q(i) = exp(-dot(dis, dis)) / (2 * sigma * sigma);
-        // normalize q
-        float sum = dlib::sum(q);
-        if (sum > my_eps)
-            q(i) /= sum;
     }
+    float sum = dlib::sum(q);
+    if (sum > my_eps)
+        q /= sum;
 }
 
-void build_sketch_hist(vector<local_desc_type> feature_descs, vector<local_desc_type> vocab, local_desc_type &sketch_hist)
+void build_sketch_hist(vector<local_desc_type> feature_descs, vector<local_desc_type> vocab, image_hist_type &sketch_hist)
 {
-    int n_desc = feature_descs.size();
+    int n_desc = feature_descs.size(), n = vocab.size();
+    image_hist_type q;
+    sketch_hist(zeros_matrix(q));
     for (int i = 0;i < n_desc;++i)
     {
-        local_desc_type q;
-        soft_quantize_feature(feature_descs[i], vocab, q);
+        soft_quantize(feature_descs[i], vocab, q);
         sketch_hist += q;
     }
     sketch_hist /= n_desc;

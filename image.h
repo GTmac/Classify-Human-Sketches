@@ -13,4 +13,5 @@ typedef dlib::matrix<float, IMAGE_SIZE, IMAGE_SIZE> image_type;
 typedef dlib::matrix<std::complex<float>, IMAGE_SIZE, IMAGE_SIZE / 2 + 1> complex_image_type;
 typedef dlib::matrix<float, LOCAL_DESC_SIZE, 1> local_desc_type;
 typedef dlib::matrix<float, LOCAL_DESC_SIZE, 1> vocab_type;
+typedef dlib::matrix<float, NUM_VOCAB, 1> image_hist_type;
 #endif

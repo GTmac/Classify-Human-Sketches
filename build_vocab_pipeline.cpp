@@ -8,8 +8,10 @@
 #include "extract_feature.h"
 #include "kmeans.h"
 #include "debug.h"
+#include "build_vocab_pipeline.h"
 using namespace std;
 
+const int MAX_LEN = 100000;
 // sample from all local descriptors
 void get_sample_local_desc(vector<local_desc_type> &all_local_desc, int sample_count)
 {
