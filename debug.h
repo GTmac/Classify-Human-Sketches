@@ -17,7 +17,7 @@ void print_matrix(T matrix)
     {
         for (int j = 0;j < matrix.NC;++j)
             if (matrix(i, j) < 100)
-                printf("%.3lf ", matrix(i, j));
+                printf("%.6lf ", matrix(i, j));
         printf("\n");
     }
 }

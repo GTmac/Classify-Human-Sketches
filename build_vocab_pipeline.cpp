@@ -7,6 +7,7 @@
 #include "read_images.h"
 #include "extract_feature.h"
 #include "kmeans.h"
+#include "debug.h"
 using namespace std;
 
 // sample from all local descriptors
@@ -58,16 +59,15 @@ int main(int argc, char *argv[])
     }
     int png_file_count = png_file_list.size();
 
-    for (int i = 0;i < 2;++i)
-    // for (int i = 0;i < png_file_count;++i)
+    for (int i = 0;i < png_file_count;++i)
     {
         image_type image = png_to_image(png_file_list[i].c_str());
         vector<local_desc_type> feature_descs = extract_features_pipeline(image);
         all_local_desc.insert(all_local_desc.end(), feature_descs.begin(), feature_descs.end());
+        printf("extraction progress: %d finished\n", i + 1);
     }
     get_sample_local_desc(all_local_desc, sample_count);
-    //for (int i = 0;i < all_local_desc.size();++i)
-    //    cout << all_local_desc[i] << endl;
+    print_vec(all_local_desc);
     vector<local_desc_type> init_centers = kmeans_plusplus(all_local_desc, vocab_size);
     vector<local_desc_type> centers = kmeans(all_local_desc, init_centers, vocab_size);
     save_vocab(centers, vocab_fname);

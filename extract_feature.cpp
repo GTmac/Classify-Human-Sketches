@@ -13,8 +13,8 @@ int spatial_bin_size = sqrt(SPATIAL_BIN_COVER) * IMAGE_SIZE / NUM_SPATIAL_BINS;
 image_type fft_input;
 complex_image_type fft_output;
 // creating plan is time-consuming, so it's done for only once
-fftwf_plan plan = fftwf_plan_dft_r2c_2d(IMAGE_SIZE, IMAGE_SIZE, &fft_input(0, 0), reinterpret_cast<float(*)[2]>(&fft_output(0, 0)), FFTW_ESTIMATE);
-fftwf_plan inv_plan = fftwf_plan_dft_c2r_2d(IMAGE_SIZE, IMAGE_SIZE, reinterpret_cast<float(*)[2]>(&fft_output(0, 0)), &fft_input(0, 0), FFTW_ESTIMATE);
+fftwf_plan plan = fftwf_plan_dft_r2c_2d(IMAGE_SIZE, IMAGE_SIZE, &fft_input(0, 0), reinterpret_cast<float(*)[2]>(&fft_output(0, 0)), FFTW_PATIENT);
+fftwf_plan inv_plan = fftwf_plan_dft_c2r_2d(IMAGE_SIZE, IMAGE_SIZE, reinterpret_cast<float(*)[2]>(&fft_output(0, 0)), &fft_input(0, 0), FFTW_PATIENT);
 complex_image_type complex_tent;
 
 // build tent function, which will be appied to the response image
@@ -83,7 +83,7 @@ image_type apply_tent(image_type response_image, image_type &image_hist)
     fftwf_execute_dft_r2c(plan, (float *)(&response_image(0, 0)), reinterpret_cast<float(*)[2]>(&complex_image(0, 0)));
     // FFT for faster convolution
     complex_result = pointwise_multiply(complex_image, complex_tent);
-    fftwf_execute_dft_c2r(inv_plan, reinterpret_cast<float(*)[2]>(&complex_image(0, 0)), &image_hist(0, 0));
+    fftwf_execute_dft_c2r(inv_plan, reinterpret_cast<float(*)[2]>(&complex_result(0, 0)), &image_hist(0, 0));
     return image_hist;
 }
 
