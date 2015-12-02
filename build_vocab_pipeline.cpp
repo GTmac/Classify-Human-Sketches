@@ -11,7 +11,6 @@
 #include "build_vocab_pipeline.h"
 using namespace std;
 
-const int MAX_LEN = 100000;
 // sample from all local descriptors
 void get_sample_local_desc(vector<local_desc_type> &all_local_desc, int sample_count)
 {
@@ -21,37 +20,16 @@ void get_sample_local_desc(vector<local_desc_type> &all_local_desc, int sample_c
     all_local_desc.resize(sample_count);
 }
 
-void save_vocab(vector<local_desc_type> vocab, char *vocab_fname)
-{
-    FILE* fp = fopen(vocab_fname, "w");
-    int n = vocab.size();
-    for (int i = 0;i < n;++i)
-    {
-        for (int j = 0;j < vocab[i].NR;++j)
-        {
-            if (j)
-                fprintf(fp, " ");
-            fprintf(fp, "%.3lf", vocab[i](j, 0));
-        }
-        fprintf(fp, "\n");
-    }
-    fclose(fp);
-}
-
 int main(int argc, char *argv[])
 {
 	if(argc < 4)
     {
-        printf("Usage: build_vocab_pipeline [Png Dir Name] [Sample Count] [Vocab File Name] (Vocab Size)\n");
+        printf("Usage: build_vocab_pipeline [Png Dir Name] [Sample Count] [Vocab File Name] [Num of Pic to Use]\n");
         return 1;
     }
     char *png_dir = argv[1], *vocab_fname = argv[3];
-    int sample_count = atoi(argv[2]), vocab_size;
+    int sample_count = atoi(argv[2]), vocab_size = NUM_VOCAB;
     vector<local_desc_type> all_local_desc;
-    if (argc >= 5)
-        vocab_size = atoi(argv[4]);
-    else
-        vocab_size = NUM_VOCAB;
 
     vector<string> png_file_list = read_png_dir(png_dir);
     if (png_file_list.size() == 0)
@@ -60,6 +38,8 @@ int main(int argc, char *argv[])
         return 1;
     }
     int png_file_count = png_file_list.size();
+    if (argc >= 5)
+        png_file_count = atoi(argv[4]);
 
     for (int i = 0;i < png_file_count;++i)
     {
@@ -69,7 +49,7 @@ int main(int argc, char *argv[])
         printf("extraction progress: %d finished\n", i + 1);
     }
     get_sample_local_desc(all_local_desc, sample_count);
-    print_vec(all_local_desc);
+    // print_vec(all_local_desc);
     vector<local_desc_type> init_centers = kmeans_plusplus(all_local_desc, vocab_size);
     vector<local_desc_type> centers = kmeans(all_local_desc, init_centers, vocab_size);
     save_vocab(centers, vocab_fname);

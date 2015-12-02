@@ -173,7 +173,9 @@ void soft_quantize(local_desc_type desc, vector<local_desc_type> vocab, image_hi
         local_desc_type dis = desc - vocab[i];
         q(i) = exp(-dot(dis, dis)) / (2 * sigma * sigma);
     }
-    float sum = dlib::sum(q);
+    float sum = 0;
+    for (int i = 0;i < q.NR;++i)
+        sum += std::abs(q(i));
     if (sum > my_eps)
         q /= sum;
 }
@@ -182,13 +184,15 @@ void build_sketch_hist(vector<local_desc_type> feature_descs, vector<local_desc_
 {
     int n_desc = feature_descs.size(), n = vocab.size();
     image_hist_type q;
-    sketch_hist(zeros_matrix(q));
+    for (int i = 0;i < sketch_hist.NR;++i)
+        sketch_hist(i) = 0.0;
     for (int i = 0;i < n_desc;++i)
     {
         soft_quantize(feature_descs[i], vocab, q);
         sketch_hist += q;
     }
     sketch_hist /= n_desc;
+    printf("max and min of hist: %f %f\n", dlib::max(sketch_hist), dlib::min(sketch_hist));
 }
 
 vector<local_desc_type> extract_features_pipeline(image_type image)

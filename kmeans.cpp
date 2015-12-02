@@ -6,8 +6,6 @@
 #include "kmeans.h"
 #include "debug.h"
 using namespace std;
-const double MAX_DIS = 1e9;
-const double KMEANS_ITER = 200;
 
 // K-means++ for initialize the cluster centers
 vector<local_desc_type> kmeans_plusplus(vector<local_desc_type> local_desc_list, int k)

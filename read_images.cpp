@@ -70,17 +70,17 @@ void read_png_file(const char *filename) {
 }
 
 image_type png_to_image(const char *fname) {
-    read_png_file(fname);
     image_type image;
+    read_png_file(fname);
     // printf("height and width: %d %d\n", height, width);
-	for(int y = 0; y < height; y++) {
-		png_bytep row = row_pointers[y];
-		for(int x = 0; x < width; x++) {
-			png_bytep px = &(row[x * 4]);
+    for(int y = 0; y < height; y++) {
+        png_bytep row = row_pointers[y];
+        for(int x = 0; x < width; x++) {
+            png_bytep px = &(row[x * 4]);
             // convert to matrix
             image(y, x) = (.299 * px[0] + .587 * px[1] + .114 * px[2]) / 255.0;
-		}
-	}
+        }
+    }
     image = 1.0 - image;
     //for (int y = 0;y < height;++y)
     //{
